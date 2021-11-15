@@ -1,0 +1,11 @@
+{
+  "name": "tweener",
+  "url": "http://github.com/openfl/tweener",
+  "license": "MIT",
+  "tags": [ "flash", "cpp", "neko", "js" ],
+  "description": "A class for creating tweens in haxe - because there's infinity between 0 and 1.",
+  "version": "1.33.74",
+  "releasenote": "Initial port",
+  "contributors": [ "singmajesty" ],
+  "dependencies": {}
+}
