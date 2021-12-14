@@ -8,6 +8,8 @@
  */
 package caurina.transitions.properties;
 
+import flash.display.DisplayObject;
+import flash.display.MovieClip;
 import flash.geom.Point;
 import flash.geom.Rectangle;
 
@@ -71,7 +73,7 @@ class DisplayShortcuts {
 	 * @param		p_value				Rectangle	The original _scrollRect rectangle
 	 * @return							Array		An array containing the .name and .value of all new properties
 	 */
-	public static function _scrollRect_splitter (p_value:Rectangle, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Array<Dynamic> {
+	public static function _scrollRect_splitter (p_value:Rectangle, p_parameters:Array<Dynamic>/*, p_extra:Dynamic = null*/):Array<Dynamic> {
 		var nArray:Array<Dynamic> = new Array();
 		if (p_value == null) {
 			// No parameter passed, so try any rectangle :/

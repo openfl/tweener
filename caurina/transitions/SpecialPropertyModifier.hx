@@ -10,7 +10,7 @@ package caurina.transitions;
  */
 class SpecialPropertyModifier {
 
-	public var modifyValues:Dynamic;
+	public var modifyValues:Dynamic->Array<Dynamic>;
 	public var getValue:Dynamic;
 
 	/**
@@ -18,7 +18,7 @@ class SpecialPropertyModifier {
 	 * 
 	 * @param		p_modifyFunction		Function		Function that returns the modifider parameters.
 	 */
-	public function new (p_modifyFunction:Dynamic, p_getFunction:Dynamic) {
+	public function new (p_modifyFunction:Dynamic->Array<Dynamic>, p_getFunction:Dynamic) {
 		modifyValues = p_modifyFunction;
 		getValue = p_getFunction;
 	}

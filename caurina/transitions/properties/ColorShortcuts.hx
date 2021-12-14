@@ -1,5 +1,7 @@
 package caurina.transitions.properties;
 
+import flash.display.DisplayObject;
+import flash.filters.BitmapFilter;
 import flash.geom.ColorTransform;
 import flash.filters.ColorMatrixFilter;
 
@@ -84,7 +86,7 @@ class ColorShortcuts {
 	 * @param		p_value				Number		The original _color value
 	 * @return							Array		An array containing the .name and .value of all new properties
 	 */
-	public static function _color_splitter(p_value:DisplayObject, p_parameters:Array<Dynamic>):Array<Dynamic> {
+	public static function _color_splitter(p_value:Int, p_parameters:Array<Dynamic>):Array<Dynamic> {
 		var nArray:Array<Dynamic> = new Array();
 		if (p_value == null) {
 			// No parameter passed, so just resets the color
@@ -115,7 +117,7 @@ class ColorShortcuts {
 	 * @param		p_value				Number		The original _colorTransform value
 	 * @return							Array		An array containing the .name and .value of all new properties
 	 */
-	public static function _colorTransform_splitter (p_value:DisplayObject, p_parameters:Array<Dynamic>):Array<Dynamic> {
+	public static function _colorTransform_splitter (p_value:ColorTransform, p_parameters:Array<Dynamic>):Array<Dynamic> {
 		var nArray:Array<Dynamic> = new Array();
 		if (p_value == null) {
 			// No parameter passed, so just resets the color
@@ -254,7 +256,7 @@ class ColorShortcuts {
 		var cc:Float = 1 - ((mtx[1]/gl + mtx[2]/bl + mtx[5]/rl + mtx[7]/bl + mtx[10]/rl + mtx[11]/gl) / 6);	// Color saturation as determined by the other channels
 		return (mc + cc) / 2;
 	}
-	public static function _saturation_set (p_obj:DisplayObject, p_value:Float, p_parameters:Array<Null<Float>>, p_extra:Dynamic = null): Void {
+	public static function _saturation_set (p_obj:DisplayObject, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null): Void {
 		
 		var isDumb:Bool = (p_parameters[0] != null);
 		var rl:Float = isDumb ? 1/3 : LUMINANCE_R;
@@ -435,7 +437,7 @@ class ColorShortcuts {
 		// Get the current color matrix of an object
 		for (filter in p_obj.filters) {
 			if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (filter, ColorMatrixFilter)) {
-				return (filter:ColorMatrixFilter).matrix.concat();
+				return cast(filter, ColorMatrixFilter).matrix.copy();
 			}
 		}
 		return [
@@ -448,11 +450,11 @@ class ColorShortcuts {
 
 	private static function setObjectMatrix(p_obj:DisplayObject, p_matrix:Array<Float>): Void {
 		// Set the current color matrix of an object
-		var objFilters:Array<BitmapFilter> = p_obj.filters.concat();
+		var objFilters:Array<BitmapFilter> = p_obj.filters.copy();
 		var found:Bool = false;
 		for (filter in objFilters) {
 			if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (filter, ColorMatrixFilter)) {
-				(filter:ColorMatrixFilter).matrix = p_matrix.concat();
+				cast(filter, ColorMatrixFilter).matrix = p_matrix.copy();
 				found = true;
 			}
 		}
@@ -463,5 +465,4 @@ class ColorShortcuts {
 		}
 		p_obj.filters = objFilters;
 	}
-#end
 }

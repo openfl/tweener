@@ -10,14 +10,14 @@ package caurina.transitions;
 class SpecialPropertySplitter {
 
 	public var parameters:Array<Dynamic>;
-	public var splitValues:Dynamic;
+	public var splitValues:Dynamic->Array<Dynamic>->Array<Dynamic>;
 
 	/**
 	 * Builds a new group special propery object.
 	 * 
 	 * @param		p_splitFunction		Function	Reference to the function used to split a value 
 	 */
-	public function new (p_splitFunction:Dynamic, p_parameters:Array<Dynamic>) {
+	public function new (p_splitFunction:Dynamic->Array<Dynamic>->Array<Dynamic>, p_parameters:Array<Dynamic>) {
 		splitValues = p_splitFunction;
 		parameters = p_parameters;
 	}

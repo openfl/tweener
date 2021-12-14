@@ -9,10 +9,10 @@ package caurina.transitions;
  */
 class SpecialProperty {
 
-	public var getValue:Dynamic; // (p_obj:Dynamic, p_parameters:Array): Number
-	public var setValue:Dynamic; // (p_obj:Dynamic, p_value:Float, p_parameters:Array): Void
+	public var getValue:Dynamic->Array<Dynamic>->Dynamic->Float; // (p_obj:Dynamic, p_parameters:Array, p_extra:Dynamic): Number
+	public var setValue:Dynamic->Float->Array<Dynamic>->Dynamic->Void; // (p_obj:Dynamic, p_value:Float, p_parameters:Array, p_extra:Dynamic): Void
 	public var parameters:Array<Dynamic>;
-	public var preProcess:Dynamic; // (p_obj:Dynamic, p_parameters:Array, p_originalValueComplete:Dynamic, p_extra:Dynamic): Number
+	public var preProcess:Dynamic->Array<Dynamic>->Dynamic->Dynamic->Float; // (p_obj:Dynamic, p_parameters:Array, p_originalValueComplete:Dynamic, p_extra:Dynamic): Number
 
 	/**
 	* Builds a new special property object.
@@ -20,7 +20,7 @@ class SpecialProperty {
 	 * @param		p_getFunction		Function	Reference to the function used to get the special property value
 	 * @param		p_setFunction		Function	Reference to the function used to set the special property value
 	 */
-	public function new (p_getFunction:Dynamic, p_setFunction:Dynamic, p_parameters:Array<Dynamic> = null, p_preProcessFunction:Dynamic = null) {
+	public function new (p_getFunction:Dynamic->Array<Dynamic>->Dynamic->Float, p_setFunction:Dynamic->Float->Array<Dynamic>->Dynamic->Void, p_parameters:Array<Dynamic> = null, p_preProcessFunction:Dynamic->Array<Dynamic>->Dynamic->Dynamic->Float = null) {
 		getValue = p_getFunction;
 		setValue = p_setFunction;
 		parameters = p_parameters;

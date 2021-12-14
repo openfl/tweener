@@ -1,5 +1,7 @@
 package caurina.transitions;
 
+import haxe.DynamicAccess;
+
 /**
  * The tween list object. Stores all of the properties and information that pertain to individual tweens.
  *
@@ -9,7 +11,7 @@ package caurina.transitions;
 class TweenListObj {
 	
 	public var scope					:Dynamic;	// Object affected by this tweening
-	public var properties				:Dynamic;	// List of properties that are tweened (PropertyInfoObj instances)
+	public var properties				:DynamicAccess<PropertyInfoObj>;	// List of properties that are tweened (PropertyInfoObj instances)
 		//  valueStart					:Null<Float>;	// Initial value of the property
 		//  valueComplete				:Null<Float>;	// The value the property should have when completed
 	public var timeStart				:Null<Float>;	// Time when this tweening should start

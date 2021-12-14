@@ -29,7 +29,9 @@ package caurina.transitions;
 
 import flash.display.*;
 import flash.events.Event;
-import openfl.Lib.getTimer;
+import haxe.Constraints.Function;
+import haxe.DynamicAccess;
+import flash.Lib.getTimer;
 
 /**
  * Tweener
@@ -52,10 +54,10 @@ class Tweener {
 
 	private static var _timeScale:Float = 1;				// Time scale (default = 1)
 
-	private static var _transitionList:Dynamic;				// List of "pre-fetched" transition functions
-	private static var _specialPropertyList:Dynamic;			// List of special properties
-	private static var _specialPropertyModifierList:Dynamic;	// List of special property modifiers
-	private static var _specialPropertySplitterList:Dynamic;	// List of special property splitters
+	private static var _transitionList:Map<String, Float->Float->Float->Float->Dynamic->Float>;				// List of "pre-fetched" transition functions
+	private static var _specialPropertyList:Map<String, SpecialProperty>;			// List of special properties
+	private static var _specialPropertyModifierList:Map<String, SpecialPropertyModifier>;	// List of special property modifiers
+	private static var _specialPropertySplitterList:Map<String, SpecialPropertySplitter>;	// List of special property splitters
 
 	public static var autoOverwrite:Bool = true;			// If true, auto overwrite on new tweens is on unless declared as false
 
@@ -100,7 +102,8 @@ class Tweener {
 		var rScopes = new Array<Dynamic>(); // List of objects to tween
 		if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (p_scopes, Array)) {
 			// The first argument is an array
-			rScopes = p_scopes.concat();
+			var arr:Array<Dynamic> = cast p_scopes;
+			rScopes = arr.copy();
 		} else {
 			// The first argument(s) is(are) object(s)
 			rScopes = [p_scopes];
@@ -118,61 +121,62 @@ class Tweener {
 		var rDelay:Float = !Reflect.hasField(p_obj, "delay") ? 0 : p_obj.delay; // Real delay
 
 		// Creates the property list; everything that isn't a hardcoded variable
-		var rProperties:Dynamic = {}; // Object containing a list of PropertyInfoObj instances
+		var rProperties:DynamicAccess<Dynamic> = {}; // Object containing a list of PropertyInfoObj instances
 		var restrictedWords:Dynamic = { overwrite:true, time:true, delay:true, useFrames:true, skipUpdates:true, transition:true, transitionParams:true, onStart:true, onUpdate:true, onComplete:true, onOverwrite:true, onError:true, rounded:true, onStartParams:true, onUpdateParams:true, onCompleteParams:true, onOverwriteParams:true, onStartScope:true, onUpdateScope:true, onCompleteScope:true, onOverwriteScope:true, onErrorScope:true};
 		var modifiedProperties:Dynamic = {};
 		for (istr in Reflect.fields(p_obj)) {
 			if (!Reflect.hasField(restrictedWords, istr)) {
 				// It's an additional pair, so adds
-				if (Reflect.hasField(_specialPropertySplitterList, istr)) {
+				if (_specialPropertySplitterList.exists(istr)) {
 					// Special property splitter
-					var splitProperties:Array<Dynamic> = Reflect.field(_specialPropertySplitterList, istr).splitValues(Reflect.field(p_obj, istr), Reflect.field(_specialPropertySplitterList, istr).parameters);
+					var splitProperties:Array<Dynamic> = _specialPropertySplitterList[istr].splitValues(Reflect.field(p_obj, istr), _specialPropertySplitterList[istr].parameters);
 					for (prop in splitProperties) {
-						if (Reflect.hasField(_specialPropertySplitterList, prop.name)) {
-							var splitProperties2:Array<Dynamic> = Reflect.field(_specialPropertySplitterList, prop.name).splitValues(prop.value, Reflect.field(_specialPropertySplitterList, prop.name).parameters);
+						if (_specialPropertySplitterList.exists(prop.name)) {
+							var splitProperties2:Array<Dynamic> = _specialPropertySplitterList[prop.name].splitValues(prop.value, _specialPropertySplitterList[prop.name].parameters);
 							for (prop2 in splitProperties2) {
-								Reflect.setField(rProperties, prop2.name, {valueStart:null, valueComplete:prop2.value, arrayIndex:prop2.arrayIndex, isSpecialProperty:false});
+								rProperties[prop2.name] = {valueStart:null, valueComplete:prop2.value, arrayIndex:prop2.arrayIndex, isSpecialProperty:false};
 							}
 						} else {
-							Reflect.setField(rProperties, prop.name, {valueStart :null, valueComplete:prop.value, arrayIndex:prop.arrayIndex, isSpecialProperty:false});
+							rProperties[prop.name] = {valueStart :null, valueComplete:prop.value, arrayIndex:prop.arrayIndex, isSpecialProperty:false};
 						}
 					}
-				} else if (Reflect.hasField(_specialPropertyModifierList, istr)) {
+				} else if (_specialPropertyModifierList.exists(istr)) {
 					// Special property modifier
-					var tempModifiedProperties:Array<Dynamic> = Reflect.field(_specialPropertyModifierList, istr).modifyValues (Reflect.field(p_obj, istr));
+					var tempModifiedProperties:Array<Dynamic> = _specialPropertyModifierList[istr].modifyValues (Reflect.field(p_obj, istr));
 					for (prop in tempModifiedProperties) {
-						Reflect.setField(modifiedProperties, prop.name, {modifierParameters:prop.parameters, modifierFunction:Reflect.field(_specialPropertyModifierList, istr).getValue});
+						Reflect.setField(modifiedProperties, prop.name, {modifierParameters:prop.parameters, modifierFunction:_specialPropertyModifierList[istr].getValue});
 					}
 				} else {
 					// Regular property or special property, just add the property normally
-					Reflect.setField(rProperties, istr, {valueStart:null, valueComplete:Reflect.field(p_obj, istr)});
+					rProperties[istr] = {valueStart:null, valueComplete:Reflect.field(p_obj, istr)};
 				}
 			}
 		}
 
 		// Verifies whether the properties exist or not, for warning messages
-		#if debug
-		// for (istr in Reflect.fields(rProperties)) {
-		// 	if (Reflect.hasField(_specialPropertyList, istr)) {
-		// 		Reflect.field(rProperties, istr).isSpecialProperty = true;
-		// 	} else {
-		// 		if (!Reflect.hasField(rScopes[0], istr)) {
-		// 			var classType = Type.getClass(rScopes[0]);
-		// 			var fields = Type.getInstanceFields(classType);
-		// 			if (fields.indexOf(istr) == -1 && fields.indexOf("get_" + istr) == -1)
-		// 			{
-		// 				printError("The property '" + istr + "' doesn't seem to be a normal object property of " + Std.string(rScopes[0]) + " or a registered special property.");
-		// 			}
-		// 		}
-		// 	}
-		// }
-		#end
+		for (istr in Reflect.fields(rProperties)) {
+			if (_specialPropertyList.exists(istr)) {
+				Reflect.field(rProperties, istr).isSpecialProperty = true;
+			}
+			#if debug
+			// else {
+			// 	if (!Reflect.hasField(rScopes[0], istr)) {
+			// 		var classType = Type.getClass(rScopes[0]);
+			// 		var fields = Type.getInstanceFields(classType);
+			// 		if (fields.indexOf(istr) == -1 && fields.indexOf("get_" + istr) == -1)
+			// 		{
+			// 			printError("The property '" + istr + "' doesn't seem to be a normal object property of " + Std.string(rScopes[0]) + " or a registered special property.");
+			// 		}
+			// 	}
+			// }
+			#end
+		}
 
 		// Adds the modifiers to the list of properties
 		for (istr in Reflect.fields(modifiedProperties)) {
 			if (Reflect.hasField(rProperties, istr)) {
-				Reflect.field(rProperties, istr).modifierParameters = Reflect.field(modifiedProperties, istr).modifierParameters;
-				Reflect.field(rProperties, istr).modifierFunction = Reflect.field(modifiedProperties, istr).modifierFunction;
+				rProperties[istr].modifierParameters = Reflect.field(modifiedProperties, istr).modifierParameters;
+				rProperties[istr].modifierFunction = Reflect.field(modifiedProperties, istr).modifierFunction;
 			}
 			
 		}
@@ -184,22 +188,22 @@ class Tweener {
 			if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (p_obj.transition, String)) {
 				// String parameter, transition names
 				var trans:String = p_obj.transition.toLowerCase();
-				rTransition = Reflect.field(_transitionList, trans);
+				rTransition = _transitionList[trans];
 			} else if (Reflect.isFunction (p_obj.transition)) {
 				// Proper transition function
 				rTransition = p_obj.transition;
 			}
 		}
-		if (rTransition == null) rTransition = Reflect.field(_transitionList, "easeoutexpo");
+		if (rTransition == null) rTransition = _transitionList["easeoutexpo"];
 
-		var nProperties:Dynamic;
+		var nProperties:DynamicAccess<PropertyInfoObj>;
 		var nTween:TweenListObj;
 
 		for (i in 0...rScopes.length) {
 			// Makes a copy of the properties
 			nProperties = {};
 			for (istr in Reflect.fields(rProperties)) {
-				Reflect.setField(nProperties, istr, new PropertyInfoObj (Reflect.field(rProperties, istr).valueStart, Reflect.field(rProperties, istr).valueComplete, Reflect.field(rProperties, istr).valueComplete, Reflect.field(rProperties, istr).arrayIndex, {}, Reflect.field(rProperties, istr).isSpecialProperty, Reflect.field(rProperties, istr).modifierFunction, Reflect.field(rProperties, istr).modifierParameters));
+				nProperties[istr] = new PropertyInfoObj (rProperties[istr].valueStart, rProperties[istr].valueComplete, rProperties[istr].valueComplete, rProperties[istr].arrayIndex, {}, rProperties[istr].isSpecialProperty, rProperties[istr].modifierFunction, rProperties[istr].modifierParameters);
 			}
 
 			if (Reflect.hasField(p_obj, "useFrames") && p_obj.useFrames == true) {
@@ -283,7 +287,8 @@ class Tweener {
 		var rScopes:Array<Dynamic>; // List of objects to tween
 		if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (p_scopes, Array)) {
 			// The first argument is an array
-			rScopes = p_scopes.concat();
+			var arr:Array<Dynamic> = cast p_scopes;
+			rScopes = arr.copy();
 		} else {
 			// The first argument(s) is(are) object(s)
 			rScopes = [p_scopes];
@@ -306,13 +311,13 @@ class Tweener {
 			if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (p_obj.transition, String)) {
 				// String parameter, transition names
 				var trans:String = p_obj.transition.toLowerCase();
-				rTransition = Reflect.field(_transitionList, trans);
+				rTransition = _transitionList[trans];
 			} else if (Reflect.isFunction (p_obj.transition)) {
 				// Proper transition function
 				rTransition = p_obj.transition;
 			}
 		}
-		if (rTransition == null) rTransition = Reflect.field(_transitionList, "easeoutexpo");
+		if (rTransition == null) rTransition = _transitionList["easeoutexpo"];
 
 		var nTween:TweenListObj;
 		for (i in 0...rScopes.length) {
@@ -443,9 +448,9 @@ class Tweener {
 		if (args == null) args = [];
 		for (arg in args) {
 			if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (arg, String) && properties.indexOf(arg) == -1) {
-				if (Reflect.hasField(_specialPropertySplitterList, arg)) {
+				if (_specialPropertySplitterList.exists(arg)) {
 					//special property, get splitter array first
-					var sps:SpecialPropertySplitter = Reflect.field(_specialPropertySplitterList, arg);
+					var sps:SpecialPropertySplitter = _specialPropertySplitterList[arg];
 					var specialProps:Array<Dynamic> = sps.splitValues(p_scope, null);
 					for (prop in specialProps) {
 					//trace(prop.name);
@@ -545,7 +550,7 @@ class Tweener {
 	 * @param		p_properties		Array		Array of strings that must be affected
 	 * @return							Boolean		Whether or not it successfully affected something
 	 */
-	private static function affectTweens (p_affectFunction:Dynamic, p_scope:Dynamic, p_properties:Array<String>) : Bool {
+	private static function affectTweens (p_affectFunction:Function, p_scope:Dynamic, p_properties:Array<String>) : Bool {
 		if (_tweenList == null || _tweenList.isEmpty()) return false;
 		var affected = false;
 		
@@ -780,11 +785,11 @@ class Tweener {
 						var prop = Reflect.field(tTweening.properties, pName);
 						if (Reflect.hasField(prop, "isSpecialProperty") && prop.isSpecialProperty == true) {
 							// It's a special property, tunnel via the special property function
-							if (Reflect.field(_specialPropertyList, pName) != null) {
-								if (Reflect.field(_specialPropertyList, pName).preProcess != null) {
-									Reflect.field(tTweening.properties, pName).valueComplete = Reflect.field(_specialPropertyList, pName).preProcess (tScope, Reflect.field(_specialPropertyList, pName).parameters, Reflect.field(tTweening.properties, pName).originalValueComplete, Reflect.field(tTweening.properties, pName).extra);
+							if (_specialPropertyList.exists(pName)) {
+								if (_specialPropertyList[pName].preProcess != null) {
+									Reflect.field(tTweening.properties, pName).valueComplete = _specialPropertyList[pName].preProcess (tScope, _specialPropertyList[pName].parameters, Reflect.field(tTweening.properties, pName).originalValueComplete, Reflect.field(tTweening.properties, pName).extra);
 								}
-								pv = Reflect.field(_specialPropertyList, pName).getValue (tScope, Reflect.field(_specialPropertyList, pName).parameters, Reflect.field(tTweening.properties, pName).extra);
+								pv = _specialPropertyList[pName].getValue (tScope, _specialPropertyList[pName].parameters, Reflect.field(tTweening.properties, pName).extra);
 							}
 						} else {
 							// Directly read property
@@ -814,8 +819,16 @@ class Tweener {
 							} else {
 								// Normal update
 								t = cTime - tTweening.timeStart;
-								b = tProperty.valueStart;
-								c = tProperty.valueComplete - tProperty.valueStart;
+								if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (tProperty.valueComplete, Float))
+								{
+									b = tProperty.valueStart;
+									c = tProperty.valueComplete - tProperty.valueStart;
+								}
+								else
+								{
+									b = 0;
+									c = 0;
+								}
 								d = tTweening.timeComplete - tTweening.timeStart;
 								nv = tTweening.transition(t, b, c, d, tTweening.transitionParams);
 							}
@@ -824,7 +837,7 @@ class Tweener {
 						if (tTweening.rounded) nv = Math.round(nv);
 						if (tProperty.isSpecialProperty) {
 							// It's a special property, tunnel via the special property method
-							Reflect.field(_specialPropertyList, pName).setValue(tScope, nv, Reflect.field(_specialPropertyList, pName).parameters, Reflect.field(tTweening.properties, pName).extra);
+							_specialPropertyList[pName].setValue(tScope, nv, _specialPropertyList[pName].parameters, Reflect.field(tTweening.properties, pName).extra);
 						} else {
 							// Directly set property
 							_setProperty(tScope, pName, nv);
@@ -873,13 +886,20 @@ class Tweener {
 		_inited = true;
 
 		// Registers all default equations
-		_transitionList = {};
+		_transitionList = new Map();
 		Equations.init();
 
 		// Registers all default special properties
-		_specialPropertyList = {};
-		_specialPropertyModifierList = {};
-		_specialPropertySplitterList = {};
+		_specialPropertyList = new Map();
+		_specialPropertyModifierList = new Map();
+		_specialPropertySplitterList = new Map();
+
+		caurina.transitions.properties.ColorShortcuts.init();
+		caurina.transitions.properties.CurveModifiers.init();
+		caurina.transitions.properties.DisplayShortcuts.init();
+		caurina.transitions.properties.FilterShortcuts.init();
+		caurina.transitions.properties.SoundShortcuts.init();
+		caurina.transitions.properties.TextShortcuts.init();
 	}
 
 	/**
@@ -888,9 +908,9 @@ class Tweener {
 	 * @param		p_name				String		Shorthand transition name
 	 * @param		p_function			Function	The proper equation function
 	 */
-	public static function registerTransition(p_name:String, p_function:Dynamic): Void {
+	public static function registerTransition(p_name:String, p_function:Float->Float->Float->Float->Dynamic->Float): Void {
 		if (!_inited) init();
-		Reflect.setField(_transitionList, p_name, p_function);
+		_transitionList[p_name] = p_function;
 	}
 
 	/**
@@ -900,10 +920,10 @@ class Tweener {
 	 * @param		p_getFunction		Function that gets the value.
 	 * @param		p_setFunction		Function that sets the value.
 	 */
-	public static function registerSpecialProperty (p_name:String, p_getFunction:Dynamic, p_setFunction:Dynamic, p_parameters:Array<Dynamic> = null, p_preProcessFunction:Dynamic = null): Void {
+	public static function registerSpecialProperty (p_name:String, p_getFunction:Dynamic->Array<Dynamic>->Dynamic->Float, p_setFunction:Dynamic->Float->Array<Dynamic>->Dynamic->Void, p_parameters:Array<Dynamic> = null, p_preProcessFunction:Dynamic->Array<Dynamic>->Dynamic->Dynamic->Float = null): Void {
 		if (!_inited) init();
 		var sp:SpecialProperty = new SpecialProperty(p_getFunction, p_setFunction, p_parameters, p_preProcessFunction);
-		Reflect.setField(_specialPropertyList, p_name, sp);
+		_specialPropertyList[p_name] = sp;
 	}
 
 	/**
@@ -913,10 +933,10 @@ class Tweener {
 	 * @param		p_modifyFunction	Function that modifies the value.
 	 * @param		p_getFunction		Function that gets the value.
 	 */
-	public static function registerSpecialPropertyModifier(p_name:String, p_modifyFunction:Dynamic, p_getFunction:Dynamic): Void {
+	public static function registerSpecialPropertyModifier(p_name:String, p_modifyFunction:Dynamic->Array<Dynamic>, p_getFunction:Dynamic): Void {
 		if (!_inited) init();
 		var spm:SpecialPropertyModifier = new SpecialPropertyModifier(p_modifyFunction, p_getFunction);
-		Reflect.setField(_specialPropertyModifierList, p_name, spm);
+		_specialPropertyModifierList[p_name] = spm;
 	}
 
 	/**
@@ -925,10 +945,10 @@ class Tweener {
 	 * @param		p_name				Name of the "special" property splitter.
 	 * @param		p_splitFunction		Function that splits the value.
 	 */
-	public static function registerSpecialPropertySplitter(p_name:String, p_splitFunction:Dynamic, p_parameters:Array<Dynamic> = null): Void {
+	public static function registerSpecialPropertySplitter(p_name:String, p_splitFunction:Dynamic->Array<Dynamic>->Array<Dynamic>, p_parameters:Array<Dynamic> = null): Void {
 		if (!_inited) init();
 		var sps:SpecialPropertySplitter = new SpecialPropertySplitter (p_splitFunction, p_parameters);
-		Reflect.setField(_specialPropertySplitterList, p_name, sps);
+		_specialPropertySplitterList[p_name] = sps;
 	}
 
 	/**

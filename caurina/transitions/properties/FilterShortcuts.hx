@@ -30,7 +30,7 @@ class FilterShortcuts {
 	/**
 	 * There's no constructor.
 	 */
-	public function FilterShortcuts () {
+	public function new () {
 		trace ("This is an static class and should not be instantiated.");
 	}
 
@@ -231,7 +231,11 @@ class FilterShortcuts {
 	 * @return							Array		An array containing the .name and .value of all new properties
 	 */
 	public static function _generic_matrix_splitter (p_value:Array<Dynamic>, p_parameters:Array<Dynamic>):Array<Dynamic> {
-		if (p_value == null) p_value = p_parameters[0].concat();
+		if (p_value == null)
+		{
+			var arr:Array<Dynamic> = cast p_parameters[0];
+			p_value = arr.copy();
+		}
 		var nArray:Array<Dynamic> = new Array();
 		for (i in 0...p_value.length) {
 			nArray.push({name:p_parameters[1][i], value:p_value[i]});
@@ -265,7 +269,7 @@ class FilterShortcuts {
 	 * @param		p_value				BitmapFilter	A BitmapFilter instance
 	 * @return							Array			An array containing the .name and .value of all new properties
 	 */
-	public static function _filter_splitter (p_value:BitmapFilter, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Array<Dynamic> {
+	public static function _filter_splitter (p_value:BitmapFilter, p_parameters:Array<Dynamic> /*, p_extra:Dynamic = null*/):Array<Dynamic> {
 		var nArray:Array<Dynamic> = new Array();
 		if (false /*#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (p_value, BevelFilter)*/) {
 			// var filter:BevelFilter = cast p_value;
@@ -447,7 +451,7 @@ class FilterShortcuts {
 		}
 	}
 
-	public static function _filter_property_set (p_obj:DisplayObject, p_value:Int, p_parameters:Array<Dynamic>, p_extra:Dynamic = null): Void {
+	public static function _filter_property_set (p_obj:DisplayObject, p_value:Dynamic, p_parameters:Array<Dynamic>, p_extra:Dynamic = null): Void {
 		var f:Array<BitmapFilter> = p_obj.filters;
 		// var i:Float;
 		var filterClass:Class<Dynamic> = p_parameters[0];
@@ -458,9 +462,12 @@ class FilterShortcuts {
 				if (splitType == "color") {
 					// Composite, color channel
 					var colorComponent:String = p_parameters[3];
-					if (colorComponent == "r") Reflect.setField (f[i], propertyName, (Std.parseInt(Reflect.field(f[i], propertyName)) & 0xffff) | (p_value << 16));
-					if (colorComponent == "g") Reflect.setField (f[i], propertyName, (Std.parseInt(Reflect.field(f[i], propertyName)) & 0xff00ff) | (p_value << 8));
-					if (colorComponent == "b") Reflect.setField (f[i], propertyName, (Std.parseInt(Reflect.field(f[i], propertyName)) & 0xffff00) | p_value);
+					var value:String = Reflect.field(f[i], propertyName);
+					if (value == null) value = "0";
+					var p_value:Int = Std.int(p_value);
+					if (colorComponent == "r") Reflect.setField (f[i], propertyName, (Std.parseInt(value) & 0xffff) | (p_value << 16));
+					if (colorComponent == "g") Reflect.setField (f[i], propertyName, (Std.parseInt(value) & 0xff00ff) | (p_value << 8));
+					if (colorComponent == "b") Reflect.setField (f[i], propertyName, (Std.parseInt(value) & 0xffff00) | p_value);
 				} else if (splitType == "matrix") {
 					var mtx:Array<Dynamic> = Reflect.field(f[i], propertyName);
 					mtx[p_parameters[3]] = p_value;

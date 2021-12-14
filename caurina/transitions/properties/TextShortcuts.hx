@@ -3,6 +3,7 @@ package caurina.transitions.properties;
 import caurina.transitions.Tweener;
 import caurina.transitions.AuxFunctions;
 
+import flash.text.TextField;
 import flash.text.TextFormat;
 
 /**
@@ -98,7 +99,8 @@ class TextShortcuts {
 	 * @param		p_value				Number		The original _color value
 	 * @return							Array		An array containing the .name and .value of all new properties
 	 */
-	public static function _generic_color_splitter (p_value:Float, p_parameters:Array<String>):Array<Dynamic> {
+	public static function _generic_color_splitter (p_value:Float, p_parameters:Array<Dynamic>):Array<Dynamic> {
+		var p_value:Int = Std.int(p_value);
 		var nArray:Array<Dynamic> = new Array();
 		nArray.push({name:p_parameters[0], value:AuxFunctions.numberToR(p_value)});
 		nArray.push({name:p_parameters[1], value:AuxFunctions.numberToG(p_value)});
@@ -132,6 +134,7 @@ class TextShortcuts {
 	}
 
 	public static function _textFormat_property_set (p_obj:TextField, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null): Void {
+		var p_value:Int = Std.int(p_value);
 		var fmt:TextFormat = p_obj.getTextFormat();
 		var propertyName:String = Std.string(p_parameters[0]);
 		var isColor:Bool = (p_parameters[1] != null);
@@ -143,7 +146,7 @@ class TextShortcuts {
 			var colorComponent:String = Std.string(p_parameters[2]);
 			if (colorComponent == "r") Reflect.setField(fmt, propertyName, (Reflect.field(fmt, propertyName) & 0xffff) | (p_value << 16));
 			if (colorComponent == "g") Reflect.setField(fmt, propertyName, (Reflect.field(fmt, propertyName) & 0xff00ff) | (p_value << 8));
-			if (colorComponent == "b") Reflect.setField fmt, propertyName, (Reflect.field(fmt, propertyName) & 0xffff00) | p_value);
+			if (colorComponent == "b") Reflect.setField(fmt, propertyName, (Reflect.field(fmt, propertyName) & 0xffff00) | p_value);
 		}
 		
 		p_obj.defaultTextFormat = fmt;

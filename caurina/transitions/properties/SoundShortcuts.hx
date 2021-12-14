@@ -1,5 +1,6 @@
 package caurina.transitions.properties;
 
+import flash.media.SoundChannel;
 import flash.media.SoundTransform;
 
 import caurina.transitions.Tweener;
@@ -45,7 +46,7 @@ class SoundShortcuts {
 	 * @param		p_obj				Object		Sound object
 	 * @return							Number		The current volume
 	 */
-	public static function _sound_volume_get (p_obj:Sound, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Float {
+	public static function _sound_volume_get (p_obj:SoundChannel, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Float {
 		return p_obj.soundTransform.volume;
 	}
 
@@ -55,7 +56,7 @@ class SoundShortcuts {
 	 * @param		p_obj				Object		Sound object
 	 * @param		p_value				Number		New volume
 	 */
-	public static function _sound_volume_set (p_obj:Sound, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Void {
+	public static function _sound_volume_set (p_obj:SoundChannel, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Void {
 		var sndTransform:SoundTransform = p_obj.soundTransform;
 		sndTransform.volume = p_value;
 		p_obj.soundTransform = sndTransform;
@@ -71,7 +72,7 @@ class SoundShortcuts {
 	 * @param		p_obj				Object		Sound object
 	 * @return							Number		The current pan
 	 */
-	public static function _sound_pan_get (p_obj:Sound, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Float {
+	public static function _sound_pan_get (p_obj:SoundChannel, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Float {
 		return p_obj.soundTransform.pan;
 	}
 
@@ -81,7 +82,7 @@ class SoundShortcuts {
 	 * @param		p_obj				Object		Sound object
 	 * @param		p_value				Number		New pan
 	 */
-	public static function _sound_pan_set (p_obj:Sound, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Void {
+	public static function _sound_pan_set (p_obj:SoundChannel, p_value:Float, p_parameters:Array<Dynamic>, p_extra:Dynamic = null):Void {
 		var sndTransform:SoundTransform = p_obj.soundTransform;
 		sndTransform.pan = p_value;
 		p_obj.soundTransform = sndTransform;
