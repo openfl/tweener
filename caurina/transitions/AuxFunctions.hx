@@ -16,6 +16,9 @@ class AuxFunctions {
 	 */
 	public static function numberToR(p_num:Int):Int {
 		// The initial & is meant to crop numbers bigger than 0xffffff
+		#if neko
+		if (p_num == null) p_num = 0;
+		#end
 		return (p_num & 0xff0000) >> 16;
 	}
 
@@ -26,6 +29,9 @@ class AuxFunctions {
 	 * @return							Number		The G value
 	 */
 	public static function numberToG(p_num:Int):Int {
+		#if neko
+		if (p_num == null) p_num = 0;
+		#end
 		return (p_num & 0xff00) >> 8;
 	}
 
@@ -36,6 +42,9 @@ class AuxFunctions {
 	 * @return							Number		The B value
 	 */
 	public static function numberToB(p_num:Int):Int {
+		#if neko
+		if (p_num == null) p_num = 0;
+		#end
 		return (p_num & 0xff);
 	}
 
